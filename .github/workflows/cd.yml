@@ -12,7 +12,9 @@ jobs:
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v1
         with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+          workload_identity_provider: projects/125247786264/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-actions-deployer@project-f528763f-7708-4e13-a23.iam.gserviceaccount.com
+
 
       - name: Set up GCP SDK
         uses: google-github-actions/setup-gcloud@v1
