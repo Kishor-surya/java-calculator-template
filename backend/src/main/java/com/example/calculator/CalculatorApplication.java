@@ -1,16 +1,11 @@
-@RestController
-@RequestMapping("/api/calculator")
-public class CalculatorController {
-    @Autowired
-    private CalculatorService service;
+package com.example.calculator;
 
-    @GetMapping("/add")
-    public CalculationRecord add(@RequestParam int a, @RequestParam int b) {
-        return service.calculate("add", a + b);
-    }
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-    @GetMapping("/subtract")
-    public CalculationRecord subtract(@RequestParam int a, @RequestParam int b) {
-        return service.calculate("subtract", a - b);
+@SpringBootApplication
+public class CalculatorApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(CalculatorApplication.class, args);
     }
 }
