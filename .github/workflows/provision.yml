@@ -1,0 +1,30 @@
+name: Provision GCP Infra
+on:
+  workflow_dispatch:
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Create GKE Cluster
+        run: |
+          gcloud container clusters create calculator-cluster \
+            --zone us-central1-a --num-nodes=3
+
+      - name: Create Cloud SQL Instance
+        run: |
+          gcloud sql instances create calculator-db \
+            --database-version=POSTGRES_14 --tier=db-f1-micro --region=us-central1
+          gcloud sql databases create calculator --instance=calculator-db
+          gcloud sql users create postgres --instance=calculator-db --password=${{ secrets.DB_PASS }}
