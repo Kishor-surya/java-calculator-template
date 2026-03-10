@@ -31,3 +31,16 @@ jobs:
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
           kubectl apply -f k8s/ingress.yaml
+
+      - name: Post deployment link to issue
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: "Kishor-surya",
+              repo: "github-actions",
+              body: `🚀 Application deployed: https://calculator.${{ secrets.GCP_PROJECT }}.cloud.goog`
+            });
+
