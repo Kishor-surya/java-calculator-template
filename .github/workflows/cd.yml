@@ -1,0 +1,33 @@
+name: CD Pipeline
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Set up GCP SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker
+
+      - name: Build & Push Docker Image
+        run: |
+          docker build -t gcr.io/${{ secrets.GCP_PROJECT }}/calculator-app:$GITHUB_SHA .
+          docker push gcr.io/${{ secrets.GCP_PROJECT }}/calculator-app:$GITHUB_SHA
+
+      - name: Deploy to GKE
+        run: |
+          gcloud container clusters get-credentials my-cluster --zone us-central1-a --project ${{ secrets.GCP_PROJECT }}
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/ingress.yaml
