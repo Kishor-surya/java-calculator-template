@@ -1,0 +1,25 @@
+name: CI Pipeline
+on: [push, pull_request]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+      - name: Build with Maven
+        run: mvn clean install
+      - name: Run Tests
+        run: mvn test
+      - name: Upload JUnit Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: junit-report
+          path: backend/target/surefire-reports/*.xml
+      - name: CodeQL Analysis
+        uses: github/codeql-action/init@v2
+        with:
+          languages: java
