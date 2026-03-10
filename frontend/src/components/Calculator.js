@@ -6,8 +6,8 @@ function Calculator() {
   const [b, setB] = useState(0);
   const [result, setResult] = useState(null);
 
-  const handleAdd = async () => {
-    const res = await api.get(`/calculator/add?a=${a}&b=${b}`);
+  const handleOperation = async (op) => {
+    const res = await api.get(`/calculator/${op}?a=${a}&b=${b}`);
     setResult(res.data.result);
   };
 
@@ -15,7 +15,10 @@ function Calculator() {
     <div>
       <input type="number" value={a} onChange={e => setA(e.target.value)} />
       <input type="number" value={b} onChange={e => setB(e.target.value)} />
-      <button onClick={handleAdd}>Add</button>
+      <button onClick={() => handleOperation("add")}>Add</button>
+      <button onClick={() => handleOperation("subtract")}>Subtract</button>
+      <button onClick={() => handleOperation("multiply")}>Multiply</button>
+      <button onClick={() => handleOperation("divide")}>Divide</button>
       <p>Result: {result}</p>
     </div>
   );
