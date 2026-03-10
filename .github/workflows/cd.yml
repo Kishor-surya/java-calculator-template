@@ -1,4 +1,5 @@
 name: CD Pipeline
+
 on:
   push:
     branches: [main]
@@ -6,43 +7,58 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
 
-      - name: Authenticate to GCP
+    permissions:
+      contents: read
+      id-token: write  # Required for Workload Identity Federation
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Authenticate to GCP via OIDC
         uses: google-github-actions/auth@v1
         with:
-          workload_identity_provider: projects/125247786264/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          workload_identity_provider: projects/125247786264/locations/global/workloadIdentityPools/github-pool/providers/github-provider-org
           service_account: github-actions-deployer@project-f528763f-7708-4e13-a23.iam.gserviceaccount.com
 
-
-      - name: Set up GCP SDK
+      - name: Set up gcloud CLI
         uses: google-github-actions/setup-gcloud@v1
 
-      - name: Configure Docker
+      - name: Configure Docker for GCR
         run: gcloud auth configure-docker
 
-      - name: Build & Push Docker Image
+      - name: Build and Push Docker Image
         run: |
           docker build -t gcr.io/${{ secrets.GCP_PROJECT }}/calculator-app:$GITHUB_SHA .
           docker push gcr.io/${{ secrets.GCP_PROJECT }}/calculator-app:$GITHUB_SHA
 
+      - name: Get GKE credentials
+        run: |
+          gcloud container clusters get-credentials calculator-cluster \
+            --zone us-central1-a \
+            --project ${{ secrets.GCP_PROJECT }}
+
       - name: Deploy to GKE
         run: |
-          gcloud container clusters get-credentials my-cluster --zone us-central1-a --project ${{ secrets.GCP_PROJECT }}
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
           kubectl apply -f k8s/ingress.yaml
 
       - name: Post deployment link to issue
+        if: github.event_name == 'issue_comment'
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: "Kishor-surya",
-              repo: "github-actions",
-              body: `🚀 Application deployed: https://calculator.${{ secrets.GCP_PROJECT }}.cloud.goog`
-            });
+            const issueNumber = context.issue.number;
+            const repo = context.repo.repo;
+            const owner = context.repo.owner;
+            const appUrl = `https://calculator.${{ secrets.GCP_PROJECT }}.cloud.goog`;
 
+            await github.rest.issues.createComment({
+              issue_number: issueNumber,
+              owner: owner,
+              repo: repo,
+              body: `🚀 App deployed: ${appUrl}`
+            });
